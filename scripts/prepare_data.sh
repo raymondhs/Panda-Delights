@@ -1,3 +1,5 @@
+mkdir -p ../data
+
 for m in train test sample; do
     python get_ids.py $m
     python filter_data.py $m
