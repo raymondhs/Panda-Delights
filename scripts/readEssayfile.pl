@@ -70,8 +70,8 @@ open( CSV, "<", $datahome."/essays.csv")
 open( my $TITLE1, ">", $datahome."/essay_title.csv") 
 	or die "Cannot open file at $datahome $!";
 	
-open( my $ESSAY1, ">", $datahome."/essay.csv") 
-	or die "Cannot open file at $datahome $!";
+#open( my $ESSAY1, ">", $datahome."/essay.csv") 
+#	or die "Cannot open file at $datahome $!";
 
 open( my $TITLE2, ">", $datahome."/essay_title_tagged.csv") 
 	or die "Cannot open file at $datahome $!";
@@ -79,8 +79,8 @@ open( my $TITLE2, ">", $datahome."/essay_title_tagged.csv")
 open( my $ESSAY2, ">", $datahome."/essay_tagged.csv") 
 	or die "Cannot open file at $datahome $!";
 	
-my $header = <CSV>;
-print $header;
+#my $header = <CSV>;
+#print $header;
 while(<CSV>){
 	my @fields = split(/,/,$_);
 	my $project_id = $fields[0];
@@ -89,7 +89,7 @@ while(<CSV>){
 	print $TITLE1 "$project_id".","."$essay_title\n";
 	printTags($project_id,$TITLE2,$essay_title);
 	my $essay = $fields[5];
-	print $ESSAY1 "$project_id".","."$essay\n";
+	#print $ESSAY1 "$project_id".","."$essay\n";
 	printTags($project_id,$ESSAY2,$essay);
 	
 }
