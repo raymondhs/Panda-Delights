@@ -21,10 +21,10 @@ def clean(s):
             return " ".join(re.findall(r'\w+', "no_text",flags = re.UNICODE | re.LOCALE)).lower()
 
 
-projects = pd.read_csv('../data/projects_sample+test.csv')
-outcomes = pd.read_csv('../data/outcomes_sample_01.csv')
-sample = pd.read_csv('../data/sampleSubmission.csv')
-essays = pd.read_csv('../data/essays_sample+test.csv')
+projects = pd.read_csv('../data/sample+test/projects.csv')
+outcomes = pd.read_csv('../data/sample/outcomes.csv')
+sample = pd.read_csv('../data/original/sampleSubmission.csv')
+essays = pd.read_csv('../data/sample+test/essays.csv')
 
 essays = essays.sort('projectid')
 projects = projects.sort('projectid')

@@ -4,32 +4,29 @@ import pandas as pd
 import numpy as np
 import sys
 
-projects = pd.read_csv('../data/projects.csv')
+projects = pd.read_csv('../data/original/projects.csv')
 projects_arr = np.array(projects)
 print "Done reading project data"
 
-essays = pd.read_csv('../data/essays.csv')
+essays = pd.read_csv('../data/original/essays.csv')
 essays_arr = np.array(essays)
 print "Done reading essay data"
 
-outcomes = pd.read_csv('../data/outcomes.csv')
+outcomes = pd.read_csv('../data/original/outcomes.csv')
 outcomes_arr = np.array(outcomes)
 print "Done reading outcome data"
 
 if sys.argv[1] == "sample":
-    ids = '../data/sample_01_projectids.txt'
-    project_out = '../data/projects_sample_01.csv'
-    ess_out = '../data/essays_sample_01.csv'
-    outcomes_out = '../data/outcomes_sample_01.csv'
+    dir = "../data/sample/"
 elif sys.argv[1] == "train":
-    ids = '../data/train_projectids.txt'
-    project_out = '../data/projects_train.csv'
-    ess_out = '../data/essays_train.csv'
-    outcomes_out = '../data/outcomes_train.csv'
+    dir = "../data/filtered-train/"
 elif sys.argv[1] == "test":
-    ids = '../data/test_projectids.txt'
-    project_out = '../data/projects_test.csv'
-    ess_out = '../data/essays_test.csv'
+    dir = "../data/test/"
+
+ids = dir+'projectids.txt'
+project_out = dir+'projects.csv'
+ess_out = dir+'essays.csv'
+outcomes_out = dir+'outcomes.csv'
 
 sample_train = {}
 for pid in open(ids):
