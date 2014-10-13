@@ -5,6 +5,7 @@
 Beating the benchmark @ KDD 2014
 
 __author__ : Abhishek Thakur
+__revisions_: Raymond, Muthu, Peter
 
 """
 
@@ -62,7 +63,9 @@ print "Transform finished"
 lr = linear_model.LogisticRegression()
 lr.fit(tr, labels=='t')
 preds =lr.predict_proba(ts)[:,1]
+preds_bin =lr.predict(ts)
+
 
 print "Learning finished"
-sample['is_exciting'] = preds
+sample['is_exciting'] = preds_bin
 sample.to_csv('predictions.csv', index = False)
