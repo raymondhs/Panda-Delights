@@ -47,6 +47,8 @@ test_idx = np.where(ess_proj_arr[:,-1] >= '2014-01-01')[0]
 traindata = ess_proj_arr[train_idx,:]
 testdata = ess_proj_arr[test_idx,:]
 del ess_proj_arr
+
+'''
 tfidf = TfidfVectorizer(min_df=3,  max_features=1000)
 
 print "Training start"
@@ -57,12 +59,36 @@ del traindata
 ts = tfidf.transform(testdata[:,5])
 del testdata
 print "Transform finished"
+'''
 
+columns = [12,13,14,15,16,17,19,20,32,33]
+trt = []
+tst = []
+for i in xrange(10):
+    subs = columns[i:]
+    for cid in subs:
+        converted = []
+        for val in traindata[:,cid+5]:
+            if val == "f":
+                converted.append(0)
+            else:
+                converted.append(1)
+        trt.append(converted)
+        converted = []
+        for val in testdata[:,cid+5]:
+            if val == "f":
+                converted.append(0)
+            else:
+                converted.append(1)
+        tst.append(converted)
 
-lr = linear_model.LogisticRegression()
-lr.fit(tr, labels=='t')
-preds =lr.predict_proba(ts)[:,1]
+    tr = np.asarray(trt).T
+    ts = np.asarray(tst).T
 
-print "Learning finished"
-sample['is_exciting'] = preds
-sample.to_csv('predictions.csv', index = False)
+    lr = linear_model.LogisticRegression()
+    lr.fit(tr, labels=='t')
+    preds =lr.predict_proba(ts)[:,1]
+
+    print "Learning finished"
+    sample['is_exciting'] = preds
+    sample.to_csv('../output/predictions_%d.csv' % i, index = False)
