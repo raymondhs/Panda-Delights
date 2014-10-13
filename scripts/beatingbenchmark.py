@@ -26,7 +26,6 @@ outcomes = pd.read_csv('../data/outcomes_sample_01.csv')
 sample = pd.read_csv('../data/sampleSubmission.csv')
 essays = pd.read_csv('../data/essays_sample+test.csv')
 
-
 essays = essays.sort('projectid')
 projects = projects.sort('projectid')
 sample = sample.sort('projectid')
@@ -65,6 +64,5 @@ lr.fit(tr, labels=='t')
 preds =lr.predict_proba(ts)[:,1]
 
 print "Learning finished"
-
 sample['is_exciting'] = preds
 sample.to_csv('predictions.csv', index = False)
