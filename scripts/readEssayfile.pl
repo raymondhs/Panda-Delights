@@ -2,6 +2,7 @@
 
 ##
 # Author : Muthu Kumar C
+# Script opening templates creait to Min-Yen Kan <knmnyn@gmail.com>
 ##
 
 require 5.0;
@@ -32,7 +33,7 @@ my $outputVersion = "1.0";
 
 sub License 
 {
-	print STDERR "# Copyright 2014 \251 Muthu Kumar C\n";
+	#print STDERR "# Copyright 2014 \251 Muthu Kumar C\n";
 }
 
 sub Help 
@@ -64,19 +65,19 @@ if (!$quite)
 	License();
 }
 
-open( CSV, "<", $datahome."/essays.csv") 
+open( CSV, "<", $datahome."/sample/essays.csv") 
 	or die "Cannot open file at $datahome $!";
 
-open( my $TITLE1, ">", $datahome."/essay_title.csv") 
+open( my $TITLE1, ">", $datahome."/sample/essay_title.csv") 
 	or die "Cannot open file at $datahome $!";
 	
 #open( my $ESSAY1, ">", $datahome."/essay.csv") 
 #	or die "Cannot open file at $datahome $!";
 
-open( my $TITLE2, ">", $datahome."/essay_title_tagged.csv") 
+open( my $TITLE2, ">", $datahome."/sample/postags/essay_title_tagged.csv") 
 	or die "Cannot open file at $datahome $!";
 	
-open( my $ESSAY2, ">", $datahome."/essay_tagged.csv") 
+open( my $ESSAY2, ">", $datahome."/sample/postags/essay_tagged.csv") 
 	or die "Cannot open file at $datahome $!";
 	
 #my $header = <CSV>;
