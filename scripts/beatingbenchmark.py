@@ -98,6 +98,19 @@ for i in xrange(10):
     preds =lr.predict_proba(ts)[:,1]
     preds_bin = lr.predict(ts)	
 
+    # convert from True/False to 1/0, t/f
+    conv_preds_bin = []
+    conv_preds_bin_tf = []
+    for row in preds_bin:
+        if row == True:
+            conv_preds_bin.append(1)
+            conv_preds_bin_tf.append("t")
+        else:
+            conv_preds_bin.append(0)
+            conv_preds_bin_tf.append("f")
+    preds_bin = np.array(conv_preds_bin)
+    preds_bin_tf = np.array(conv_preds_bin_tf)
+
     print "Learning finished"
     sample['is_exciting'] = preds
     sample_bin['is_exciting'] = preds_bin
