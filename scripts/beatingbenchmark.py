@@ -50,6 +50,7 @@ def run_cv(X, y):
     print "Running CV"
     kf = cross_validation.StratifiedKFold(y, n_folds=3, shuffle=True, random_state=1)
     it = 1
+    mean_auc = 0.0
     for train_index, test_index in kf:
         print "* Iteration %d" % it
         it += 1
@@ -75,6 +76,9 @@ def run_cv(X, y):
 
         auc = roc_auc_score(y_test, preds)
         print "AUC =", auc
+        mean_auc += auc
+    mean_auc /= 3
+    print "AVG AUC =", mean_auc
     
 
 def bool2int(arr):
