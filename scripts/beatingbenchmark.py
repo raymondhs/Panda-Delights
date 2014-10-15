@@ -13,13 +13,14 @@ import pandas as pd
 import numpy as np
 from sklearn import linear_model
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn import metrics
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import f1_score
-from sklearn import metrics
 from sklearn.metrics import accuracy_score
+from sklearn.metrics import roc_auc_score
 from sklearn import cross_validation
 
-import re
+import re, sys
 
 def clean(s):
         try:
@@ -27,11 +28,54 @@ def clean(s):
         except:
             return " ".join(re.findall(r'\w+', "no_text",flags = re.UNICODE | re.LOCALE)).lower()
 
+def print_cm(cm, labels):
+    """
+    pretty print for confusion matrixes
+    https://gist.github.com/zachguo/10296432
+    """
+    columnwidth = max([len(x) for x in labels])
+    # Print header
+    print " " * columnwidth,
+    for label in labels: 
+        print "%{0}s".format(columnwidth) % label,
+    print
+    # Print rows
+    for i, label1 in enumerate(labels):
+        print "%{0}s".format(columnwidth) % label1,
+        for j in range(len(labels)): 
+            print "%{0}d".format(columnwidth) % cm[i, j],
+        print
+
 def run_cv(X, y):
-    kf = cross_validation.KFold(train.shape[0], n_folds=3, shuffle=True, random_state=1)
+    print "Running CV"
+    kf = cross_validation.StratifiedKFold(y, n_folds=3, shuffle=True, random_state=1)
+    it = 1
     for train_index, test_index in kf:
+        print "* Iteration %d" % it
+        it += 1
+
         X_train, X_test = X[train_index], X[test_index]
         y_train, y_test = y[train_index], y[test_index]
+        
+        lr = linear_model.LogisticRegression()
+        lr.fit(X_train, y_train)
+        preds = lr.predict_proba(X_test)[:,1]
+        preds_bin = lr.predict(X_test)	
+    
+        cm = confusion_matrix(y_test,preds_bin,[1,0])
+        print_cm(cm,["t","f"])
+
+        '''
+        f1 = f1_score(y_test, preds_bin, average=None)
+        print "F1 =", f1
+
+        acc = accuracy_score(y_test,preds_bin)
+        print "ACC =", acc
+        '''
+
+        auc = roc_auc_score(y_test, preds)
+        print "AUC =", auc
+    
 
 def bool2int(arr):
     newArr = np.copy(arr)
@@ -83,15 +127,28 @@ print "Transform finished"
 
 
 '''
+
+mode = "submit"
+if len(sys.argv) > 1:
+    mode = sys.argv[1]
+
+print "running experiments"
+
 columns = [12,13,14,15,16,17,19,20,32,33]
 trt = []
 tst = []
 for i in xrange(10):
     subs = np.array(columns[i:])+5
+    print "====================="
+    print "Using %d features" % subs.shape[0]
     tr = traindata[:,subs]
     ts = testdata[:,subs]
     tr = bool2int(tr)
     ts = bool2int(ts)
+
+    if mode == "cv":
+        run_cv(tr, labels)
+        continue
 
     lr = linear_model.LogisticRegression()
     lr.fit(tr, labels)
@@ -104,12 +161,8 @@ for i in xrange(10):
 
     sample.to_csv('../output/predictions_%d.csv' % i, index = False)
     sample_bin.to_csv('../output/binary_predictions/predictions_bin_%d.csv' % i, index = False)
-    
-    #confusion_matrix(labels,preds_bin)
-    #f1_score(labels, preds_bin, average=None)
-    #accuracy_score(labels,preds_bin)
 
-    #fpr, tpr, thresholds = metrics.roc_curve(labels, preds_bin, pos_label=2)
-    #metrics.auc(fpr, tpr)
+print "====================="
+print "done experiments"
    
 
