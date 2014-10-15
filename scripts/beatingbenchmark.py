@@ -17,6 +17,7 @@ from sklearn.metrics import confusion_matrix
 from sklearn.metrics import f1_score
 from sklearn import metrics
 from sklearn.metrics import accuracy_score
+from sklearn import cross_validation
 
 import re
 
@@ -26,6 +27,17 @@ def clean(s):
         except:
             return " ".join(re.findall(r'\w+', "no_text",flags = re.UNICODE | re.LOCALE)).lower()
 
+def run_cv(X, y):
+    kf = cross_validation.KFold(train.shape[0], n_folds=3, shuffle=True, random_state=1)
+    for train_index, test_index in kf:
+        X_train, X_test = X[train_index], X[test_index]
+        y_train, y_test = y[train_index], y[test_index]
+
+def bool2int(arr):
+    newArr = np.copy(arr)
+    newArr[arr=="t"] = 1
+    newArr[arr=="f"] = 0
+    return newArr.astype(np.int)
 
 projects = pd.read_csv('../data/sample+test/projects.csv')
 outcomes = pd.read_csv('../data/sample/outcomes.csv')
@@ -44,6 +56,8 @@ outcomes = outcomes.sort('projectid')
 outcomes_arr = np.array(outcomes)
 
 labels = outcomes_arr[:,1]
+labels = bool2int(labels)
+
 ess_proj['essay'] = ess_proj['essay'].apply(clean)
 ess_proj_arr = np.array(ess_proj)
 print "convert successfully"
@@ -73,43 +87,16 @@ columns = [12,13,14,15,16,17,19,20,32,33]
 trt = []
 tst = []
 for i in xrange(10):
-    subs = columns[i:]
-    for cid in subs:
-        converted = []
-        for val in traindata[:,cid+5]:
-            if val == "f":
-                converted.append(0)
-            else:
-                converted.append(1)
-        trt.append(converted)
-        converted = []
-        for val in testdata[:,cid+5]:
-            if val == "f":
-                converted.append(0)
-            else:
-                converted.append(1)
-        tst.append(converted)
-
-    tr = np.asarray(trt).T
-    ts = np.asarray(tst).T
+    subs = np.array(columns[i:])+5
+    tr = traindata[:,subs]
+    ts = testdata[:,subs]
+    tr = bool2int(tr)
+    ts = bool2int(ts)
 
     lr = linear_model.LogisticRegression()
-    lr.fit(tr, labels=='t')
-    preds =lr.predict_proba(ts)[:,1]
+    lr.fit(tr, labels)
+    preds = lr.predict_proba(ts)[:,1]
     preds_bin = lr.predict(ts)	
-
-    # convert from True/False to 1/0, t/f
-    conv_preds_bin = []
-    conv_preds_bin_tf = []
-    for row in preds_bin:
-        if row == True:
-            conv_preds_bin.append(1)
-            conv_preds_bin_tf.append("t")
-        else:
-            conv_preds_bin.append(0)
-            conv_preds_bin_tf.append("f")
-    preds_bin = np.array(conv_preds_bin)
-    preds_bin_tf = np.array(conv_preds_bin_tf)
 
     print "Learning finished"
     sample['is_exciting'] = preds
