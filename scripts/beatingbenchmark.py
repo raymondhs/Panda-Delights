@@ -19,6 +19,7 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import roc_auc_score
 from sklearn import cross_validation
+from datetime import datetime
 
 import re, sys
 
@@ -87,11 +88,11 @@ def bool2int(arr):
     newArr[arr=="f"] = 0
     return newArr.astype(np.int)
 
-projects = pd.read_csv('../data/sample+test/projects.csv')
-outcomes = pd.read_csv('../data/sample/outcomes.csv')
+projects = pd.read_csv('../data/original/projects.csv')
+outcomes = pd.read_csv('../data/original/outcomes.csv')
 sample = pd.read_csv('../data/original/sampleSubmission.csv')
 sample_bin = sample[:]
-essays = pd.read_csv('../data/sample+test/essays.csv')
+essays = pd.read_csv('../data/original/essays.csv')
 
 essays = essays.sort('projectid')
 projects = projects.sort('projectid')
@@ -116,6 +117,18 @@ test_idx = np.where(ess_proj_arr[:,-1] >= '2014-01-01')[0]
 traindata = ess_proj_arr[train_idx,:]
 testdata = ess_proj_arr[test_idx,:]
 del ess_proj_arr
+
+date_format = '%Y-%m-%d'
+discount = []
+for i in range(len(testdata)) :
+	delta = datetime.strptime(testdata[i,-1],date_format) - datetime(2014,02,10)
+	if delta.days>0 : 
+		delta = datetime(2014,05,15) - datetime.strptime(testdata[i,-1],date_format)
+		discount.append([(delta.days/94.0)*0.9+0.1])
+	else : 
+		discount.append([1.0])
+
+discount = np.array(discount)
 
 '''
 tfidf = TfidfVectorizer(min_df=3,  max_features=1000)
@@ -156,9 +169,10 @@ for i in xrange(10):
 
     lr = linear_model.LogisticRegression()
     lr.fit(tr, labels)
-    preds = lr.predict_proba(ts)[:,1]
+    preds = lr.predict_proba(ts)
     preds_bin = lr.predict(ts)	
 
+    preds = preds[:,1]*discount[:,0]
     print "Learning finished"
     sample['is_exciting'] = preds
     sample_bin['is_exciting'] = preds_bin
