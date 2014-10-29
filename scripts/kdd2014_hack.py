@@ -5,18 +5,43 @@ Dependencies: Python 2.7 or higher, numpy, scikit-learn
 import pandas as pd
 import numpy as np
 from datetime import datetime
-import math
+import sys
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn import metrics
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn import cross_validation
+from sklearn.metrics import roc_auc_score
 
 #Helper functions
 def diff(a, b):
     b = set(b)
     return [aa for aa in a if aa not in b]
+
+def run_cv(X, y):
+    print "Running CV"
+    kf = cross_validation.StratifiedKFold(y, n_folds=3, shuffle=True, random_state=1)
+    it = 1
+    mean_auc = 0.0
+    for train_index, test_index in kf:
+        print "* Iteration %d" % it
+        it += 1
+
+        X_train, X_test = X[train_index], X[test_index]
+        y_train, y_test = y[train_index], y[test_index]
+        
+        lr = LogisticRegression()
+        lr.fit(X_train, y_train)
+        preds = lr.predict_proba(X_test)[:,1]
+        preds_bin = lr.predict(X_test)	
+
+        auc = roc_auc_score(y_test, preds)
+        print "AUC =", auc
+        mean_auc += auc
+    mean_auc /= 3
+    print "AVG AUC =", mean_auc
 
 #Loading CSV files
 #donations = pd.read_csv('Data/donations.csv')
@@ -59,23 +84,37 @@ projects_numeric_columns = ['students_reached',
                             'fulfillment_labor_materials',
                             'total_price_excluding_optional_support',
                             'total_price_including_optional_support']
-#projects_numeric_columns += ['school_latitude', 'school_longitude']
+#projects_numeric_columns += ['school_latitude']
+#projects_numeric_columns += ['school_longitude']
 projects_numeric_values = np.array(projects[projects_numeric_columns])
 
 exclude_columns = []
-exclude_columns += ['school_city','school_stat','school_zip','school_metro','school_district','school_county','teacher_prefix']
+exclude_columns += ['school_city','school_zip','school_metro','school_district','school_county','teacher_prefix']
+#exclude_columns += ['school_state']
 #exclude_columns += ['primary_focus_subject','primary_focus_area','secondary_focus_subject','secondary_focus_area']
 #exclude_columns += ['resource_type','grade_level']
 
 bool_columns = ['school_charter', 'school_magnet', 'school_year_round', 'school_nlns', 'school_kipp', 'school_charter_ready_promise', 'teacher_teach_for_america', 'teacher_ny_teaching_fellow', 'eligible_double_your_impact_match', 'eligible_almost_home_match']
 
-projects_id_columns = ['projectid', 'teacher_acctid', 'schoolid', 'school_ncesid']
+projects_id_columns = ['projectid', 'school_ncesid']
+#projects_id_columns += ['teacher_acctid']
+projects_id_columns += ['schoolid']
 projects_categorial_columns = diff(diff(diff(list(projects.columns), projects_id_columns), projects_numeric_columns), 
                                    ['date_posted'])
 projects_categorial_columns = diff(projects_categorial_columns, bool_columns)
 projects_categorial_columns = diff(projects_categorial_columns, exclude_columns)
 
 #projects_categorial_values = np.array(projects[projects_categorial_columns])
+
+#projects_numeric_columns = diff(projects_numeric_columns, ['school_latitude', 'school_longitude'])
+
+
+print "%d numeric:" % len(projects_numeric_columns), 
+print projects_numeric_columns
+print "%d categorical:" % len(projects_categorial_columns),
+print projects_categorial_columns
+print "%d bool:" % len(bool_columns),
+print bool_columns
 
 selected_columns = projects_numeric_columns+projects_categorial_columns+bool_columns
 #selected_columns = projects_categorial_columns+bool_columns
@@ -128,11 +167,16 @@ enc = OneHotEncoder(categorical_features=categorial_idx,sparse=True)
 enc.fit(projects_data)
 projects_data = enc.transform(projects_data)
 
+print "Data shape =", projects_data.shape
 
 #Predicting
 projects_data = projects_data.tocsr()
 train = projects_data[train_idx,:]
 test = projects_data[test_idx,:]
+
+if "cv" in sys.argv:
+    run_cv(train,labels=='t')
+    sys.exit(0)
 
 project_dates = np.array(projects['date_posted'])[test_idx]
 
