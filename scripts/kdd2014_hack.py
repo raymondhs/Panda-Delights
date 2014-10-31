@@ -43,6 +43,38 @@ def run_cv(X, y):
     mean_auc /= 3
     print "AVG AUC =", mean_auc
 
+def run_cv_essay(X, y, X_essay):
+    print "Running CV"
+    kf = cross_validation.StratifiedKFold(y, n_folds=3, shuffle=True, random_state=1)
+    it = 1
+    mean_auc = 0.0
+    for train_index, test_index in kf:
+        print "* Iteration %d" % it
+        it += 1
+
+        X_train, X_test = X[train_index], X[test_index]
+        y_train, y_test = y[train_index], y[test_index]
+        X_essay_train, X_essay_test = X_essay[train_index], X_essay[test_index]
+       
+	clf = LogisticRegression()
+
+        clf.fit(X_essay_train, y_train)
+        print "Essay data shape =", X_essay_train.shape
+        ess_preds = clf.predict_proba(X_essay_test)[:,1]
+        
+        lr = LogisticRegression()
+        lr.fit(X_train, y_train)
+
+        preds = lr.predict_proba(X_test)[:,1]
+        preds_bin = lr.predict(X_test)	
+
+        preds = (ess_preds+preds)/2.0
+
+        auc = roc_auc_score(y_test, preds)
+        print "AUC =", auc
+        mean_auc += auc
+    mean_auc /= 3
+    print "AVG AUC =", mean_auc
 #Loading CSV files
 #donations = pd.read_csv('Data/donations.csv')
 projects = pd.read_csv('Data/projects.csv')
@@ -180,7 +212,8 @@ train = projects_data[train_idx,:]
 test = projects_data[test_idx,:]
 
 if "cv" in sys.argv:
-    run_cv(train,labels=='t')
+    #run_cv(train,labels=='t')
+    run_cv_essay(train,labels=='t',essays_train_t)
     sys.exit(0)
 
 project_dates = np.array(projects['date_posted'])[test_idx]
@@ -204,6 +237,8 @@ preds = clf.predict_proba(test)[:,1]
 
 # average
 preds = (ess_preds+preds)/2.0
+sample['is_exciting'] = preds
+sample.to_csv('predictions_nodiscount.csv', index = False)
 
 preds = preds*discount[:,0]
 
