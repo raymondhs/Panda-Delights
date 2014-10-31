@@ -65,19 +65,16 @@ if (!$quite)
 	License();
 }
 
-open( CSV, "<", $datahome."/sample/essays.csv") 
+open( CSV, "<", $datahome."/mnt/localraid/essays.csv") 
 	or die "Cannot open file at $datahome $!";
 
-open( my $TITLE1, ">", $datahome."/sample/essay_title.csv") 
-	or die "Cannot open file at $datahome $!";
-	
-#open( my $ESSAY1, ">", $datahome."/essay.csv") 
+#open( my $TITLE1, ">", $datahome."/sample/essay_title.csv") 
 #	or die "Cannot open file at $datahome $!";
 
-open( my $TITLE2, ">", $datahome."/sample/postags/essay_title_tagged.csv") 
-	or die "Cannot open file at $datahome $!";
+#open( my $TITLE2, ">", $datahome."/sample/postags/essay_title_tagged.csv") 
+#	or die "Cannot open file at $datahome $!";
 	
-open( my $ESSAY2, ">", $datahome."/sample/postags/essay_tagged.csv") 
+open( my $ESSAY2, ">", $datahome."/mnt/localraid/postags/essay_tagged.csv") 
 	or die "Cannot open file at $datahome $!";
 	
 #my $header = <CSV>;
@@ -85,22 +82,35 @@ open( my $ESSAY2, ">", $datahome."/sample/postags/essay_tagged.csv")
 while(<CSV>){
 	my @fields = split(/,/,$_);
 	my $project_id = $fields[0];
-	my $essay_title = $fields[2];
+	#my $essay_title = $fields[2];
 	
-	print $TITLE1 "$project_id".","."$essay_title\n";
-	printTags($project_id,$TITLE2,$essay_title);
-	my $essay = $fields[5];
-	#print $ESSAY1 "$project_id".","."$essay\n";
+	#print $TITLE1 "$project_id".","."$essay_title\n";
+	#printTags($project_id,$TITLE2,$essay_title);
+	my $essay = join (@fields[1..$#fields];
+	
+	#replace first & last quote
+	$essay =~ s/^\"//;
+	$essay =~ s/\"$//;
+	$essay =~ s/\"+/\"/;
+	
 	printTags($project_id,$ESSAY2,$essay);
-	
 }
 
 sub printTags{
 	my ($project_id, $fh, $text) = @_;
 	my $tagged_sentences = FeatureExtraction::extractFeatures($text,1,0);
+	print $fh "$project_id".",";
+	
+	if(keys %$tagged_sentences eq  0){
+		print <NULL>
+	}
+	
 	foreach my $sid (sort {$a <=> $b} keys %$tagged_sentences){
 		my $tagged = $tagged_sentences->{$sid};
 		print "$sid \t $tagged\n";
-		print $fh "$project_id".","."$tagged\n";
+		my $tags = s/\<(.*?)\>/$1/g;
+		print "$sid \t $tags\n";
+		print $fh "$tags";
 	}	
+	print $fh "\n";
 }
