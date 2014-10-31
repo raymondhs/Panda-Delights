@@ -65,7 +65,7 @@ if (!$quite)
 	License();
 }
 
-open( CSV, "<", $datahome."/mnt/localraid/essays.csv") 
+open( CSV, "<", "../data/original/essays.csv") 
 	or die "Cannot open file at $datahome $!";
 
 #open( my $TITLE1, ">", $datahome."/sample/essay_title.csv") 
@@ -74,7 +74,7 @@ open( CSV, "<", $datahome."/mnt/localraid/essays.csv")
 #open( my $TITLE2, ">", $datahome."/sample/postags/essay_title_tagged.csv") 
 #	or die "Cannot open file at $datahome $!";
 	
-open( my $ESSAY2, ">", $datahome."/mnt/localraid/postags/essay_tagged.csv") 
+open( my $ESSAY2, ">", "../data/essay_tagged.csv") 
 	or die "Cannot open file at $datahome $!";
 	
 #my $header = <CSV>;
@@ -86,7 +86,7 @@ while(<CSV>){
 	
 	#print $TITLE1 "$project_id".","."$essay_title\n";
 	#printTags($project_id,$TITLE2,$essay_title);
-	my $essay = join (@fields[1..$#fields];
+	my $essay = @fields[1..$#fields];
 	
 	#replace first & last quote
 	$essay =~ s/^\"//;
@@ -101,16 +101,17 @@ sub printTags{
 	my $tagged_sentences = FeatureExtraction::extractFeatures($text,1,0);
 	print $fh "$project_id".",";
 	
-	if(keys %$tagged_sentences eq  0){
-		print <NULL>
+	if(keys %$tagged_sentences ==  0){
+		print $fh "NULL";
 	}
 	
 	foreach my $sid (sort {$a <=> $b} keys %$tagged_sentences){
 		my $tagged = $tagged_sentences->{$sid};
 		print "$sid \t $tagged\n";
 		my $tags = s/\<(.*?)\>/$1/g;
-		print "$sid \t $tags\n";
-		print $fh "$tags";
+		print $tags;
+		print $fh $tags;
 	}	
 	print $fh "\n";
+    print "\n";
 }
