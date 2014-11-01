@@ -48,6 +48,8 @@ sub Help
 my $help	= 0;
 my $quite	= 0;
 my $datahome = $path."/../data";
+my $inputpath = $ARGV[0];
+my $outputpath = $ARGV[1];
 
 $help = 1 unless GetOptions(
 				'h' 		=>	\$help,
@@ -65,7 +67,8 @@ if (!$quite)
 	License();
 }
 
-open( CSV, "<", "../data/original/essays.csv") 
+#open( CSV, "<", "../data/original/essays.csv") 
+open( CSV, "<", $ARGV[0])
 	or die "Cannot open file at $datahome $!";
 
 #open( my $TITLE1, ">", $datahome."/sample/essay_title.csv") 
@@ -74,7 +77,8 @@ open( CSV, "<", "../data/original/essays.csv")
 #open( my $TITLE2, ">", $datahome."/sample/postags/essay_title_tagged.csv") 
 #	or die "Cannot open file at $datahome $!";
 	
-open( my $ESSAY2, ">", "../data/essay_tagged.csv") 
+#open( my $ESSAY2, ">", "../data/essay_tagged.csv") 
+open( my $ESSAY2, ">", $ARGV[1]) 
 	or die "Cannot open file at $datahome $!";
 	
 #my $header = <CSV>;
@@ -107,10 +111,12 @@ sub printTags{
 	
 	foreach my $sid (sort {$a <=> $b} keys %$tagged_sentences){
 		my $tagged = $tagged_sentences->{$sid};
-		print "$sid \t $tagged\n";
-		my $tags = s/\<(.*?)\>/$1/g;
-		print $tags;
-		print $fh $tags;
+        #my $tags = s/>(.*?)<\/(.*?)>/>/g;
+		$tagged =~ s/(\<.*?\>)(.*?)\<\/.*?\>/$1/g;
+		print $tagged;
+		print " ";
+		print $fh $tagged;
+        print $fh " ";
 	}	
 	print $fh "\n";
     print "\n";
