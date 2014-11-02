@@ -5,7 +5,7 @@ Dependencies: Python 2.7 or higher, numpy, scikit-learn
 import pandas as pd
 import numpy as np
 from datetime import datetime
-import sys
+import sys, re
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import GradientBoostingClassifier
@@ -14,6 +14,7 @@ from sklearn.preprocessing import LabelEncoder, OneHotEncoder, MinMaxScaler
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn import cross_validation
 from sklearn.metrics import roc_auc_score
+from scipy.sparse import hstack
 
 #Helper functions
 def diff(a, b):
@@ -43,7 +44,7 @@ def run_cv(X, y):
     mean_auc /= 3
     print "AVG AUC =", mean_auc
 
-def run_cv_essay(X, y, X_essay):
+def run_cv_essay(X, y, X_essay, X_pos=None):
     print "Running CV"
     kf = cross_validation.StratifiedKFold(y, n_folds=3, shuffle=True, random_state=1)
     it = 1
@@ -56,7 +57,7 @@ def run_cv_essay(X, y, X_essay):
         y_train, y_test = y[train_index], y[test_index]
         X_essay_train, X_essay_test = X_essay[train_index], X_essay[test_index]
        
-	clf = LogisticRegression()
+        clf = LogisticRegression()
 
         clf.fit(X_essay_train, y_train)
         print "Essay data shape =", X_essay_train.shape
@@ -82,8 +83,7 @@ outcomes = pd.read_csv('Data/outcomes.csv')
 #resources = pd.read_csv('Data/resources.csv')
 sample = pd.read_csv('Data/sampleSubmission.csv')
 essays = pd.read_csv('Data/essays.csv')
-#tagged = pd.read_csv('../data/essay_tagged_prep.csv')
-#tagged_proj = pd.merge(tagged, projects, on ='projectid')
+tagged = pd.read_csv('Data/essays_tagged.csv')
 
 print 'Read data files.'
 
@@ -94,7 +94,7 @@ sample = sample.sort('projectid')
 outcomes = outcomes.sort('projectid')
 #donations = donations.sort('projectid')
 #resources = resources.sort('projectid')
-#tagged = tagged.sort('projectid')
+tagged = tagged.sort('projectid')
 
 #Setting training data and test data indices
 dates = np.array(projects.date_posted)
@@ -106,6 +106,7 @@ test_idx = np.where(dates >= '2014-01-01')[0]
 projects = projects.fillna(value={'students_reached':32})
 projects = projects.fillna(method='pad') #'pad' filling is a naive way. We have better methods.
 essays = essays.fillna(value="N/A")
+tagged = tagged.fillna(value="N/A")
 
 #Set target labels
 pid_dict = dict((pid,True) for pid in np.array(projects)[train_idx,:][:,0])
@@ -177,24 +178,51 @@ for i in range(1, projects_categorial_values.shape[1]):
     projects_data = np.column_stack((projects_data, label_encoder.fit_transform(projects_categorial_values[:,i])))
 '''
 
+########## Textual features ############
 #Compute essay feature
 essays_arr = np.array(essays)
 essays_train = essays_arr[train_idx,:]
+
+dictio = {}
+tokens = 0
+for i in range(essays_train.shape[0]):
+    tokens_in_ess = re.findall(r'\b\w\w+\b',essays_train[i,5])
+    for token in tokens_in_ess:
+        dictio[token]=1
+    tokens += len(tokens_in_ess)
+print "Total #tokens", tokens
+print "Total #token types", len(dictio.keys())
+
 essays_test = essays_arr[test_idx,:]
-tfidf = TfidfVectorizer(min_df=1)
+tfidf = TfidfVectorizer(min_df=3)
 tfidf.fit(essays_train[:,5])
 essays_train_t = tfidf.transform(essays_train[:,5])
 del essays_train
 essays_test_t = tfidf.transform(essays_test[:,5])
 del essays_test
+print "Essay data shape =", essays_train_t.shape
+
+#Compute POS tag feature
+tagged_arr = np.array(tagged)
+tagged_train = tagged_arr[train_idx,:]
+tagged_test = tagged_arr[test_idx,:]
+tfidf = TfidfVectorizer(min_df=1)
+tfidf.fit(tagged_train[:,1])
+tagged_train_t = tfidf.transform(tagged_train[:,1])
+del tagged_train
+tagged_test_t = tfidf.transform(tagged_test[:,1])
+del tagged_test
+print "POS data shape =", tagged_train_t.shape
+
+essays_pos_train_t = hstack([essays_train_t, tagged_train_t]) 
+essays_pos_test_t = hstack([essays_test_t, tagged_test_t]) 
 
 clf = LogisticRegression()
 
-clf.fit(essays_train_t, labels=='t')
-print "Essay data shape =", essays_train_t.shape
-ess_preds = clf.predict_proba(essays_test_t)[:,1]
+clf.fit(essays_pos_train_t, labels=='t')
+ess_preds = clf.predict_proba(essays_pos_test_t)[:,1]
 
-#
+########################################
 
 projects_data = projects_data.astype(float)
 
@@ -210,10 +238,16 @@ print "Data shape =", projects_data.shape
 projects_data = projects_data.tocsr()
 train = projects_data[train_idx,:]
 test = projects_data[test_idx,:]
+print "Test data shape =", test.shape
+
+true_cnt = (labels=='t').sum()
+false_cnt = (labels=='f').sum()
+print "Training =  %d +ve, %d -ve" % (true_cnt, false_cnt)
 
 if "cv" in sys.argv:
     #run_cv(train,labels=='t')
-    run_cv_essay(train,labels=='t',essays_train_t)
+    #run_cv_essay(train,labels=='t',essays_train_t)
+    run_cv_essay(train,labels=='t',essays_pos_train_t.tocsr())
     sys.exit(0)
 
 project_dates = np.array(projects['date_posted'])[test_idx]
